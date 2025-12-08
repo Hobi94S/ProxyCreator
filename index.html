@@ -302,6 +302,45 @@
             color: var(--manga-red);
         }
 
+        #pdf-loading {
+            display: none;
+            text-align: center;
+            font-weight: 700;
+            font-family: 'Noto Sans JP', sans-serif;
+            color: var(--manga-black);
+            margin: 20px;
+            padding: 20px;
+            background: var(--manga-white);
+            border: 3px solid var(--manga-black);
+            position: relative;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            z-index: 1000;
+        }
+
+        #pdf-loading::before {
+            content: 'Generating PDF...';
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--manga-red);
+        }
+
+        .pdf-loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--manga-gray);
+            border-top: 4px solid var(--manga-black);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .stats {
             text-align: center;
             margin-bottom: 25px;
@@ -576,6 +615,9 @@
     </div>
 
     <div id="loading">Loading images in order...</div>
+    <div id="pdf-loading">
+        <div class="pdf-loading-spinner"></div>
+    </div>
     <div class="stats" id="stats-info">Total cards: 0 | Estimated sheets: 0</div>
 
     <div id="preview-area"></div>
@@ -692,50 +734,61 @@
     async function generatePDF() {
         if (cardDataList.length === 0) return alert("Add cards!");
 
-        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pdfLoading = document.getElementById('pdf-loading');
+        pdfLoading.style.display = 'block';
 
-        const totalGridWidth = (COLS * CARD_WIDTH) + ((COLS - 1) * GAP);
-        const totalGridHeight = (ROWS * CARD_HEIGHT) + ((ROWS - 1) * GAP);
-        
-        const startX = (PAGE_WIDTH - totalGridWidth) / 2;
-        const startY = (PAGE_HEIGHT - totalGridHeight) / 2;
+        try {
+            await new Promise(resolve => setTimeout(resolve, 100));
 
-        let printQueue = [];
-        cardDataList.forEach(card => {
-            for (let i = 0; i < card.qty; i++) printQueue.push(card.src);
-        });
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-        let idx = 0;
-        while (idx < printQueue.length) {
-            if (idx > 0 && idx % CARDS_PER_PAGE === 0) doc.addPage();
+            const totalGridWidth = (COLS * CARD_WIDTH) + ((COLS - 1) * GAP);
+            const totalGridHeight = (ROWS * CARD_HEIGHT) + ((ROWS - 1) * GAP);
+            
+            const startX = (PAGE_WIDTH - totalGridWidth) / 2;
+            const startY = (PAGE_HEIGHT - totalGridHeight) / 2;
 
-            const pos = idx % CARDS_PER_PAGE;
-            const col = pos % COLS;
-            const row = Math.floor(pos / COLS);
+            let printQueue = [];
+            cardDataList.forEach(card => {
+                for (let i = 0; i < card.qty; i++) printQueue.push(card.src);
+            });
 
-            const x = startX + (col * (CARD_WIDTH + GAP));
-            const y = startY + (row * (CARD_HEIGHT + GAP));
+            let idx = 0;
+            while (idx < printQueue.length) {
+                if (idx > 0 && idx % CARDS_PER_PAGE === 0) doc.addPage();
 
-            doc.addImage(printQueue[idx], 'JPEG', x, y, CARD_WIDTH, CARD_HEIGHT);
+                const pos = idx % CARDS_PER_PAGE;
+                const col = pos % COLS;
+                const row = Math.floor(pos / COLS);
 
-            doc.setDrawColor(150, 150, 150);
-            doc.setLineWidth(0.1);
-            doc.setLineDash([1, 1], 0); 
+                const x = startX + (col * (CARD_WIDTH + GAP));
+                const y = startY + (row * (CARD_HEIGHT + GAP));
 
-            if (col < COLS - 1) {
-                const guideX = x + CARD_WIDTH + (GAP / 2);
-                doc.line(guideX, y, guideX, y + CARD_HEIGHT); 
+                doc.addImage(printQueue[idx], 'JPEG', x, y, CARD_WIDTH, CARD_HEIGHT);
+
+                doc.setDrawColor(150, 150, 150);
+                doc.setLineWidth(0.1);
+                doc.setLineDash([1, 1], 0); 
+
+                if (col < COLS - 1) {
+                    const guideX = x + CARD_WIDTH + (GAP / 2);
+                    doc.line(guideX, y, guideX, y + CARD_HEIGHT); 
+                }
+
+                if (row < ROWS - 1) {
+                    const guideY = y + CARD_HEIGHT + (GAP / 2);
+                    doc.line(x, guideY, x + CARD_WIDTH, guideY);
+                }
+
+                idx++;
             }
 
-            if (row < ROWS - 1) {
-                const guideY = y + CARD_HEIGHT + (GAP / 2);
-                doc.line(x, guideY, x + CARD_WIDTH, guideY);
-            }
-
-            idx++;
+            doc.save('one-piece-proxies-hobi94s.pdf');
+        } catch (error) {
+            alert("Error generating PDF: " + error.message);
+        } finally {
+            pdfLoading.style.display = 'none';
         }
-
-        doc.save('one-piece-proxies-hobi94s.pdf');
     }
 </script>
 
