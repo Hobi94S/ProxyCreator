@@ -48,7 +48,7 @@ const PAGE_COPY = {
   [PAGE_STANDARD]: {
     title: 'Proxy Card Standard Creator',
     subtitle: 'A4 Landscape | Cut spacing (4mm) | Cut guides',
-    panelLabel: 'CARD WORKFLOW',
+    panelLabel: 'Options',
     addLabel: '+ Add Cards',
     downloadLabel: 'Download PDF',
     clearLabel: 'Clear All',
@@ -57,12 +57,12 @@ const PAGE_COPY = {
   },
   [PAGE_CUSTOM_DON]: {
     title: 'Custom DON!! Creator',
-    subtitle: 'A4 Landscape | Standard card size | DON!! frame overlay',
-    panelLabel: 'DON WORKFLOW',
-    addLabel: '+ Add DON Art',
+    subtitle: 'A4 Landscape | Cut spacing (4mm) | Cut guides',
+    panelLabel: 'Options',
+    addLabel: '+ Add DON!! Art',
     downloadLabel: 'Download DON PDF',
-    clearLabel: 'Clear DON',
-    emptyStateMessage: 'Add DON art!',
+    clearLabel: 'Clear DON!',
+    emptyStateMessage: 'Add DON!! art',
     fileName: 'one-piece-don-hobi94s.pdf',
     helperText:
       'Upload artwork, then use the zoom and position sliders to frame it behind the DON!! template.',
@@ -651,7 +651,7 @@ export default function App() {
   return (
     <>
       <a className="floating-help" href={HELP_LINK}>
-        <span className="floating-help-label">Help</span>
+        <span className="floating-help-label">Help!</span>
         <span className="floating-help-text">Proxy Images can be found here</span>
       </a>
 
@@ -821,7 +821,7 @@ export default function App() {
           <span className="footer-title">Created by Hobi94S</span>
           <a href="https://github.com/Hobi94S" target="_blank" rel="noreferrer" className="btn btn-github">
             <svg
-              height="20"
+              height="10"
               width="20"
               viewBox="0 0 16 16"
               fill="currentColor"
