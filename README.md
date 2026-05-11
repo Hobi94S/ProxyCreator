@@ -1,54 +1,76 @@
-# 🃏 Proxy Card Standard Creator
+# Proxy Card Standard Creator
 
-> Um gerador de folhas de impressão para cartas TCG (One Piece, Magic, Pokémon) com estética de Mangá e guias de corte automáticas.
+A React-based proxy sheet generator for TCG cards with the same manga-inspired UI and PDF output behavior as the original single-file version.
 
-![Project Status](https://img.shields.io/badge/status-active-green)
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-1.0.0-orange)
+## What It Does
 
-## 📖 Sobre o Projeto
+- Upload multiple card images at once
+- Set how many copies of each card should be printed
+- Preview the card list in upload order
+- See the total card count and estimated A4 sheet count
+- Generate an A4 landscape PDF with:
+  - 4 columns x 2 rows
+  - 63mm x 88mm card size
+  - 4mm spacing
+  - dotted cut guides between cards
 
-O **Proxy Card Standard Creator** é uma ferramenta web *client-side* (roda direto no navegador) desenvolvida para facilitar a vida de jogadores de TCG que precisam imprimir proxies para testes.
+All image processing and PDF generation still happen locally in the browser.
 
-O diferencial deste projeto é sua interface estilizada com **estética de Mangá** (preto e branco, retículas, fontes japonesas) e a geração precisa de PDFs prontos para impressão em papel A4, já incluindo espaçamento e linhas de guia para corte.
+## Stack
 
-### ✨ Funcionalidades
+- Node.js
+- React
+- Vite
+- jsPDF
 
-* **Design Responsivo & Temático:** Interface inspirada em painéis de mangá.
-* **Upload Múltiplo:** Adicione várias imagens de cartas de uma vez.
-* **Gerenciamento de Quantidade:** Defina quantas cópias de cada carta você deseja imprimir.
-* **Previsão de Folhas:** Calculadora automática de quantas folhas A4 serão necessárias.
-* **Geração de PDF Inteligente:**
-    * Formato A4 Paisagem (Landscape).
-    * 8 cartas por folha (4 colunas x 2 linhas).
-    * Tamanho padrão TCG (63mm x 88mm).
-    * **Guias de Corte:** Linhas pontilhadas entre as cartas para facilitar o uso de estilete/guilhotina.
-    * Espaçamento de 4mm entre cartas (sangria segura).
-* **Processamento Local:** Todas as imagens são processadas no seu navegador. Nenhuma imagem é enviada para servidores externos, garantindo privacidade e velocidade.
+## Getting Started
 
-## 🚀 Como Usar
+1. Install dependencies:
 
-Não é necessária instalação de dependências ou servidores (Node.js, Python, etc). O projeto é um arquivo único.
+```bash
+npm install
+```
 
-1.  Baixe o arquivo `index.html` (ou clone este repositório).
-2.  Abra o arquivo `index.html` em qualquer navegador moderno (Chrome, Firefox, Edge).
-3.  Clique em **"+ ADD CARDS"** e selecione as imagens das suas cartas.
-4.  Ajuste a quantidade (`Qty`) de cada carta conforme necessário.
-5.  Clique em **"DOWNLOAD PDF"**.
-6.  Abra o PDF gerado e imprima em escala **100% (Tamanho Real)** para manter as medidas corretas.
+2. Start the app:
 
-## 🛠️ Tecnologias Utilizadas
+```bash
+npm start
+```
 
-* **HTML5 & CSS3:** Uso extensivo de CSS Variables (`:root`) e Flexbox/Grid para o layout.
-* **JavaScript (Vanilla):** Lógica de manipulação do DOM e leitura de arquivos.
-* **[jsPDF](https://github.com/parallax/jsPDF):** Biblioteca para geração dinâmica do arquivo PDF no navegador.
-* **Google Fonts:** Noto Serif JP, Noto Sans JP e Zen Maru Gothic.
+3. Open the local URL shown by Vite in your browser.
 
-## ⚙️ Configurações Técnicas (Para Desenvolvedores)
+Important: this is now a React app served by Vite. Opening the root `index.html` directly like the old version will not run the app logic.
 
-Se você deseja alterar o tamanho das cartas (por exemplo, para cartas de Yu-Gi-Oh), você pode editar as constantes no início da tag `<script>`:
+## Production Build
 
-```javascript
-const CARD_WIDTH = 63;  // Largura em mm
-const CARD_HEIGHT = 88; // Altura em mm
-const GAP = 4;          // Espaço entre as cartas em mm
+Build the app:
+
+```bash
+npm run build
+```
+
+Preview the production build locally:
+
+```bash
+npm run preview
+```
+
+## Project Structure
+
+- `index.html`: Vite entry HTML
+- `src/main.jsx`: React bootstrap
+- `src/App.jsx`: main app logic and PDF generation
+- `src/components/CardPreview.jsx`: individual card preview UI
+- `src/styles.css`: app styling
+
+## Technical Settings
+
+If you want to change the output layout, edit the constants near the top of `src/App.jsx`:
+
+```js
+const CARD_WIDTH = 63;
+const CARD_HEIGHT = 88;
+const COLS = 4;
+const ROWS = 2;
+const GAP = 4;
+```
