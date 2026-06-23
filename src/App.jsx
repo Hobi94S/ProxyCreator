@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import CardPreview from './components/CardPreview';
 import DonPreview from './components/DonPreview';
+import OnePieceProxyTool from './components/OnePieceProxyTool';
 import {
   clampDonCardState,
   DON_TEMPLATE_HEIGHT,
@@ -10,22 +11,25 @@ import {
   getDonRenderMetrics,
   MIN_DON_ZOOM,
 } from './utils/don';
+import {
+  CARD_GAP_MM,
+  CARD_HEIGHT_MM,
+  CARD_WIDTH_MM,
+  CARDS_PER_PAGE,
+  GRID_COLUMNS,
+  GRID_ROWS,
+  PAGE_HEIGHT_MM,
+  PAGE_WIDTH_MM,
+  PDF_TARGET_DPI,
+  mmToPixels,
+} from './utils/printLayout';
 
-const CARD_WIDTH = 63;
-const CARD_HEIGHT = 88;
-const PAGE_WIDTH = 297;
-const PAGE_HEIGHT = 210;
-const COLS = 4;
-const ROWS = 2;
-const CARDS_PER_PAGE = COLS * ROWS;
-const GAP = 4;
-const MM_PER_INCH = 25.4;
-const PDF_TARGET_DPI = 300;
 const PDF_JPEG_QUALITY = 0.82;
 const SMALL_SOURCE_THRESHOLD_BYTES = 350 * 1024;
 const IMAGE_UPLOAD_BATCH_SIZE = 4;
 const PAGE_STANDARD = 'standard';
 const PAGE_CUSTOM_DON = 'custom-don';
+const PAGE_ONE_PIECE_PROXY = 'one-piece-proxy';
 const DON_TEMPLATE_SRC = new URL('../Card DON!! Template (New) (1).png', import.meta.url).href;
 const HELP_LINK =
   'https://docs.google.com/document/d/1zaCg6Ww4wZQyiczGCOnipnVe-ip-8n3V0EFpfkCOx74/edit?';
@@ -42,6 +46,7 @@ const INITIAL_UPLOAD_QUEUE_STATE = {
 const PAGE_HASHES = {
   [PAGE_STANDARD]: '#/standard',
   [PAGE_CUSTOM_DON]: '#/custom-don',
+  [PAGE_ONE_PIECE_PROXY]: '#/one-piece-proxy',
 };
 
 const PAGE_COPY = {
@@ -67,10 +72,22 @@ const PAGE_COPY = {
     helperText:
       'Upload artwork, then use the zoom and position sliders to frame it behind the DON!! template.',
   },
+  [PAGE_ONE_PIECE_PROXY]: {
+    title: 'One Piece Proxy Tool',
+    subtitle: 'Decklist resolver | DotGG card cache | Printable A4/A3 proxy sheets',
+  },
 };
 
 function getPageFromHash(hash) {
-  return hash === PAGE_HASHES[PAGE_CUSTOM_DON] ? PAGE_CUSTOM_DON : PAGE_STANDARD;
+  if (hash === PAGE_HASHES[PAGE_CUSTOM_DON]) {
+    return PAGE_CUSTOM_DON;
+  }
+
+  if (hash === PAGE_HASHES[PAGE_ONE_PIECE_PROXY]) {
+    return PAGE_ONE_PIECE_PROXY;
+  }
+
+  return PAGE_STANDARD;
 }
 
 function createCardId() {
@@ -94,10 +111,6 @@ function detectImageFormat(dataUrl) {
   }
 
   return 'JPEG';
-}
-
-function mmToPixels(mm, dpi = PDF_TARGET_DPI) {
-  return Math.round((mm / MM_PER_INCH) * dpi);
 }
 
 function yieldToBrowser() {
@@ -164,8 +177,8 @@ function createDonCard(upload) {
 
 async function preparePdfAsset(card) {
   const image = await loadImage(card.src);
-  const maxWidth = mmToPixels(CARD_WIDTH);
-  const maxHeight = mmToPixels(CARD_HEIGHT);
+  const maxWidth = mmToPixels(CARD_WIDTH_MM);
+  const maxHeight = mmToPixels(CARD_HEIGHT_MM);
   const targetWidth = Math.max(1, Math.min(image.naturalWidth, maxWidth));
   const targetHeight = Math.max(1, Math.min(image.naturalHeight, maxHeight));
   const isNearPrintResolution =
@@ -241,7 +254,11 @@ export default function App() {
 
   useEffect(() => {
     document.title =
-      activePage === PAGE_CUSTOM_DON ? 'Custom DON!! Creator' : 'Proxy Card Standard Creator';
+      activePage === PAGE_CUSTOM_DON
+        ? 'Custom DON!! Creator'
+        : activePage === PAGE_ONE_PIECE_PROXY
+          ? 'One Piece Proxy Tool'
+          : 'Proxy Card Standard Creator';
   }, [activePage]);
 
   const currentItems = activePage === PAGE_CUSTOM_DON ? donCards : cards;
@@ -250,6 +267,7 @@ export default function App() {
   const totalCards = currentItems.reduce((sum, card) => sum + card.qty, 0);
   const totalSheets = Math.ceil(totalCards / CARDS_PER_PAGE);
   const pageCopy = PAGE_COPY[activePage];
+  const isLegacyPage = activePage !== PAGE_ONE_PIECE_PROXY;
 
   function navigateToPage(page) {
     if (window.location.hash !== PAGE_HASHES[page]) {
@@ -556,10 +574,10 @@ export default function App() {
       format: 'a4',
     });
 
-    const totalGridWidth = COLS * CARD_WIDTH + (COLS - 1) * GAP;
-    const totalGridHeight = ROWS * CARD_HEIGHT + (ROWS - 1) * GAP;
-    const startX = (PAGE_WIDTH - totalGridWidth) / 2;
-    const startY = (PAGE_HEIGHT - totalGridHeight) / 2;
+    const totalGridWidth = GRID_COLUMNS * CARD_WIDTH_MM + (GRID_COLUMNS - 1) * CARD_GAP_MM;
+    const totalGridHeight = GRID_ROWS * CARD_HEIGHT_MM + (GRID_ROWS - 1) * CARD_GAP_MM;
+    const startX = (PAGE_WIDTH_MM - totalGridWidth) / 2;
+    const startY = (PAGE_HEIGHT_MM - totalGridHeight) / 2;
     const pdfAssets = new Map(
       await Promise.all(items.map(async (item) => [item.id, await getAsset(item)])),
     );
@@ -576,10 +594,10 @@ export default function App() {
       }
 
       const position = index % CARDS_PER_PAGE;
-      const col = position % COLS;
-      const row = Math.floor(position / COLS);
-      const x = startX + col * (CARD_WIDTH + GAP);
-      const y = startY + row * (CARD_HEIGHT + GAP);
+      const col = position % GRID_COLUMNS;
+      const row = Math.floor(position / GRID_COLUMNS);
+      const x = startX + col * (CARD_WIDTH_MM + CARD_GAP_MM);
+      const y = startY + row * (CARD_HEIGHT_MM + CARD_GAP_MM);
       const currentCard = printQueue[index];
 
       doc.addImage(
@@ -587,8 +605,8 @@ export default function App() {
         currentCard.format,
         x,
         y,
-        CARD_WIDTH,
-        CARD_HEIGHT,
+        CARD_WIDTH_MM,
+        CARD_HEIGHT_MM,
         currentCard.alias,
         'MEDIUM',
       );
@@ -596,14 +614,14 @@ export default function App() {
       doc.setLineWidth(0.1);
       doc.setLineDashPattern([1, 1], 0);
 
-      if (col < COLS - 1) {
-        const guideX = x + CARD_WIDTH + GAP / 2;
-        doc.line(guideX, y, guideX, y + CARD_HEIGHT);
+      if (col < GRID_COLUMNS - 1) {
+        const guideX = x + CARD_WIDTH_MM + CARD_GAP_MM / 2;
+        doc.line(guideX, y, guideX, y + CARD_HEIGHT_MM);
       }
 
-      if (row < ROWS - 1) {
-        const guideY = y + CARD_HEIGHT + GAP / 2;
-        doc.line(x, guideY, x + CARD_WIDTH, guideY);
+      if (row < GRID_ROWS - 1) {
+        const guideY = y + CARD_HEIGHT_MM + CARD_GAP_MM / 2;
+        doc.line(x, guideY, x + CARD_WIDTH_MM, guideY);
       }
     }
 
@@ -672,148 +690,161 @@ export default function App() {
             >
               Custom DON!!
             </button>
+            <button
+              type="button"
+              className={`page-tab ${activePage === PAGE_ONE_PIECE_PROXY ? 'active' : ''}`}
+              onClick={() => navigateToPage(PAGE_ONE_PIECE_PROXY)}
+            >
+              One Piece Proxy Tool
+            </button>
           </div>
 
           <h1>{pageCopy.title}</h1>
           <p>{pageCopy.subtitle}</p>
         </header>
 
-        <div className="controls-panel" data-section-label={pageCopy.panelLabel}>
-          <div className="controls">
-            {activePage === PAGE_STANDARD ? (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-upload"
-                  onClick={() => cardFileInputRef.current?.click()}
-                >
-                  <span>{PAGE_COPY[PAGE_STANDARD].addLabel}</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-generate"
-                  onClick={generateCardPdf}
-                  disabled={currentUploadState.active}
-                >
-                  <span>{PAGE_COPY[PAGE_STANDARD].downloadLabel}</span>
-                </button>
-                <button type="button" className="btn btn-clear" onClick={clearCards}>
-                  <span>{PAGE_COPY[PAGE_STANDARD].clearLabel}</span>
-                </button>
-                <input
-                  ref={cardFileInputRef}
-                  type="file"
-                  id="card-file-input"
-                  multiple
-                  accept="image/*"
-                  onChange={(event) =>
-                    handleFiles(event.target.files, {
-                      queueRef: cardUploadQueueRef,
-                      sessionRef: cardUploadSessionRef,
-                      setUploadState: setCardUploadQueueState,
-                      processingRef: isProcessingCardUploadQueueRef,
-                      appendItems: (loadedItems) =>
-                        setCards((currentCards) => [...currentCards, ...loadedItems]),
-                      transformUpload: (upload) => upload,
-                      fileInputRef: cardFileInputRef,
-                    })
-                  }
-                />
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-upload"
-                  onClick={() => donFileInputRef.current?.click()}
-                >
-                  <span>{PAGE_COPY[PAGE_CUSTOM_DON].addLabel}</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-generate"
-                  onClick={generateDonPdf}
-                  disabled={currentUploadState.active}
-                >
-                  <span>{PAGE_COPY[PAGE_CUSTOM_DON].downloadLabel}</span>
-                </button>
-                <button type="button" className="btn btn-clear" onClick={clearDonCards}>
-                  <span>{PAGE_COPY[PAGE_CUSTOM_DON].clearLabel}</span>
-                </button>
-                <input
-                  ref={donFileInputRef}
-                  type="file"
-                  id="don-file-input"
-                  multiple
-                  accept="image/*"
-                  onChange={(event) =>
-                    handleFiles(event.target.files, {
-                      queueRef: donUploadQueueRef,
-                      sessionRef: donUploadSessionRef,
-                      setUploadState: setDonUploadQueueState,
-                      processingRef: isProcessingDonUploadQueueRef,
-                      appendItems: (loadedItems) =>
-                        setDonCards((currentCards) => [...currentCards, ...loadedItems]),
-                      transformUpload: createDonCard,
-                      fileInputRef: donFileInputRef,
-                    })
-                  }
-                />
-              </>
-            )}
-          </div>
+        {isLegacyPage ? (
+          <>
+            <div className="controls-panel" data-section-label={pageCopy.panelLabel}>
+              <div className="controls">
+                {activePage === PAGE_STANDARD ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-upload"
+                      onClick={() => cardFileInputRef.current?.click()}
+                    >
+                      <span>{PAGE_COPY[PAGE_STANDARD].addLabel}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-generate"
+                      onClick={generateCardPdf}
+                      disabled={currentUploadState.active}
+                    >
+                      <span>{PAGE_COPY[PAGE_STANDARD].downloadLabel}</span>
+                    </button>
+                    <button type="button" className="btn btn-clear" onClick={clearCards}>
+                      <span>{PAGE_COPY[PAGE_STANDARD].clearLabel}</span>
+                    </button>
+                    <input
+                      ref={cardFileInputRef}
+                      type="file"
+                      id="card-file-input"
+                      multiple
+                      accept="image/*"
+                      onChange={(event) =>
+                        handleFiles(event.target.files, {
+                          queueRef: cardUploadQueueRef,
+                          sessionRef: cardUploadSessionRef,
+                          setUploadState: setCardUploadQueueState,
+                          processingRef: isProcessingCardUploadQueueRef,
+                          appendItems: (loadedItems) =>
+                            setCards((currentCards) => [...currentCards, ...loadedItems]),
+                          transformUpload: (upload) => upload,
+                          fileInputRef: cardFileInputRef,
+                        })
+                      }
+                    />
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-upload"
+                      onClick={() => donFileInputRef.current?.click()}
+                    >
+                      <span>{PAGE_COPY[PAGE_CUSTOM_DON].addLabel}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-generate"
+                      onClick={generateDonPdf}
+                      disabled={currentUploadState.active}
+                    >
+                      <span>{PAGE_COPY[PAGE_CUSTOM_DON].downloadLabel}</span>
+                    </button>
+                    <button type="button" className="btn btn-clear" onClick={clearDonCards}>
+                      <span>{PAGE_COPY[PAGE_CUSTOM_DON].clearLabel}</span>
+                    </button>
+                    <input
+                      ref={donFileInputRef}
+                      type="file"
+                      id="don-file-input"
+                      multiple
+                      accept="image/*"
+                      onChange={(event) =>
+                        handleFiles(event.target.files, {
+                          queueRef: donUploadQueueRef,
+                          sessionRef: donUploadSessionRef,
+                          setUploadState: setDonUploadQueueState,
+                          processingRef: isProcessingDonUploadQueueRef,
+                          appendItems: (loadedItems) =>
+                            setDonCards((currentCards) => [...currentCards, ...loadedItems]),
+                          transformUpload: createDonCard,
+                          fileInputRef: donFileInputRef,
+                        })
+                      }
+                    />
+                  </>
+                )}
+              </div>
 
-          {pageCopy.helperText ? <p className="panel-helper">{pageCopy.helperText}</p> : null}
-        </div>
-
-        {currentUploadState.active ? (
-          <div id="loading">
-            <div className="loading-title">Loading images in queue...</div>
-            <div className="loading-meta">
-              Processed {currentUploadState.processed} of {currentUploadState.total} | Remaining{' '}
-              {currentUploadState.pending}
+              {pageCopy.helperText ? <p className="panel-helper">{pageCopy.helperText}</p> : null}
             </div>
-            {currentUploadState.currentFileName ? (
-              <div className="loading-current">Current file: {currentUploadState.currentFileName}</div>
+
+            {currentUploadState.active ? (
+              <div id="loading">
+                <div className="loading-title">Loading images in queue...</div>
+                <div className="loading-meta">
+                  Processed {currentUploadState.processed} of {currentUploadState.total} | Remaining{' '}
+                  {currentUploadState.pending}
+                </div>
+                {currentUploadState.currentFileName ? (
+                  <div className="loading-current">Current file: {currentUploadState.currentFileName}</div>
+                ) : null}
+              </div>
             ) : null}
-          </div>
-        ) : null}
 
-        {currentIsGeneratingPdf ? (
-          <div id="pdf-loading">
-            <div className="pdf-loading-spinner" />
-          </div>
-        ) : null}
+            {currentIsGeneratingPdf ? (
+              <div id="pdf-loading">
+                <div className="pdf-loading-spinner" />
+              </div>
+            ) : null}
 
-        <div className="stats" id="stats-info" data-section-label="PRINT STATUS">
-          Total cards: {totalCards} | A4 sheets needed: {totalSheets}
-        </div>
+            <div className="stats" id="stats-info" data-section-label="PRINT STATUS">
+              Total cards: {totalCards} | A4 sheets needed: {totalSheets}
+            </div>
 
-        <div id="preview-area" className={activePage === PAGE_CUSTOM_DON ? 'don-preview-area' : ''}>
-          {activePage === PAGE_STANDARD
-            ? cards.map((card, index) => (
-                <CardPreview
-                  key={card.id}
-                  card={card}
-                  index={index}
-                  onQtyChange={updateCardQty}
-                  onRemove={removeCard}
-                />
-              ))
-            : donCards.map((card, index) => (
-                <DonPreview
-                  key={card.id}
-                  card={card}
-                  index={index}
-                  templateSrc={DON_TEMPLATE_SRC}
-                  onQtyChange={updateDonQty}
-                  onRemove={removeDonCard}
-                  onReset={resetDonFrame}
-                  onZoomChange={updateDonZoom}
-                  onOffsetChange={updateDonOffset}
-                />
-              ))}
-        </div>
+            <div id="preview-area" className={activePage === PAGE_CUSTOM_DON ? 'don-preview-area' : ''}>
+              {activePage === PAGE_STANDARD
+                ? cards.map((card, index) => (
+                    <CardPreview
+                      key={card.id}
+                      card={card}
+                      index={index}
+                      onQtyChange={updateCardQty}
+                      onRemove={removeCard}
+                    />
+                  ))
+                : donCards.map((card, index) => (
+                    <DonPreview
+                      key={card.id}
+                      card={card}
+                      index={index}
+                      templateSrc={DON_TEMPLATE_SRC}
+                      onQtyChange={updateDonQty}
+                      onRemove={removeDonCard}
+                      onReset={resetDonFrame}
+                      onZoomChange={updateDonZoom}
+                      onOffsetChange={updateDonOffset}
+                    />
+                  ))}
+            </div>
+          </>
+        ) : (
+          <OnePieceProxyTool />
+        )}
       </div>
 
       <footer>

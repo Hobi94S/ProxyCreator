@@ -46,12 +46,38 @@
   <body>
     <div id="boot-status">
       <div class="boot-card">
-        <h1>Loading app...</h1>
-        <p>If this message stays on screen, the project is probably being opened directly instead of running through the React dev server.</p>
-        <p>Run <code>npm install</code> and then <code>npm start</code> in this folder.</p>
+        <h1>ProxyCreator Dev Boot</h1>
+        <p>If this screen stays visible, the browser did not finish loading the React entry module.</p>
+        <p>Expected dev entry: <code>/src/main.jsx</code></p>
       </div>
     </div>
     <div id="root"></div>
-    <script type="module" src="./src/main.jsx"></script>
+    <script type="module">
+      import('/src/main.jsx').catch((error) => {
+        console.error('Failed to load /src/main.jsx', error);
+
+        const bootStatus = document.getElementById('boot-status');
+
+        if (!bootStatus) {
+          return;
+        }
+
+        const heading = bootStatus.querySelector('h1');
+        const paragraphs = bootStatus.querySelectorAll('p');
+
+        if (heading) {
+          heading.textContent = 'App failed to load entry module';
+        }
+
+        if (paragraphs[0]) {
+          paragraphs[0].textContent =
+            error instanceof Error ? error.message : 'Unknown module loading error.';
+        }
+
+        if (paragraphs[1]) {
+          paragraphs[1].textContent = 'Open the browser console and Network tab for the failing request.';
+        }
+      });
+    </script>
   </body>
 </html>

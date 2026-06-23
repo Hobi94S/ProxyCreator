@@ -1,0 +1,20 @@
+X [ERROR] Cannot read directory "../..": Acesso negado.
+
+X [ERROR] Could not resolve "C:\\Users\\gutem\\Documents\\ProxyCreator\\vite.config.js"
+
+<anonymous_script>:1
+
+
+SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at parseJSON (C:\Users\gutem\Documents\ProxyCreator\node_modules\esbuild\lib\main.js:1882:15)
+    at buildResponseToResult (C:\Users\gutem\Documents\ProxyCreator\node_modules\esbuild\lib\main.js:1202:48)
+    at C:\Users\gutem\Documents\ProxyCreator\node_modules\esbuild\lib\main.js:1232:16
+    at responseCallbacks.<computed> (C:\Users\gutem\Documents\ProxyCreator\node_modules\esbuild\lib\main.js:884:9)
+    at handleIncomingPacket (C:\Users\gutem\Documents\ProxyCreator\node_modules\esbuild\lib\main.js:939:12)
+    at Socket.readFromStdout (C:\Users\gutem\Documents\ProxyCreator\node_modules\esbuild\lib\main.js:862:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+
+Node.js v24.13.0
