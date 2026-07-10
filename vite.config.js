@@ -1,35 +1,20 @@
 import { defineConfig } from 'vite';
-import { handleOnePieceApiRequest } from './server/onepieceApi.js';
 
-function onePieceApiMiddleware() {
-  return {
-    name: 'one-piece-api-middleware',
-    configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        const requestUrl = new URL(req.originalUrl || req.url || '/', 'http://localhost');
+function getPagesBase() {
+  if (process.env.GITHUB_ACTIONS !== 'true') {
+    return '/';
+  }
 
-        if (await handleOnePieceApiRequest(req, res, requestUrl)) {
-          return;
-        }
+  const repository = process.env.GITHUB_REPOSITORY || '';
+  const repoName = repository.split('/')[1];
 
-        next();
-      });
-    },
-    configurePreviewServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        const requestUrl = new URL(req.originalUrl || req.url || '/', 'http://localhost');
+  if (!repoName) {
+    return '/';
+  }
 
-        if (await handleOnePieceApiRequest(req, res, requestUrl)) {
-          return;
-        }
-
-        next();
-      });
-    },
-  };
+  return `/${repoName}/`;
 }
 
 export default defineConfig({
-  base: '/',
-  plugins: [onePieceApiMiddleware()],
+  base: getPagesBase(),
 });

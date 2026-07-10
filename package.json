@@ -4,10 +4,10 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "start": "vite --host 0.0.0.0",
+    "dev": "node server.js",
+    "start": "node server.js",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "node server.js --mode production"
   },
   "dependencies": {
     "jspdf": "^2.5.1",

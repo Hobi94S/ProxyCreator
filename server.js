@@ -40,7 +40,12 @@ async function start() {
   if (!isProduction) {
     vite = await createViteServer({
       root: __dirname,
-      configFile: path.join(__dirname, 'vite.config.js'),
+      configFile: false,
+      base: '/',
+      optimizeDeps: {
+        noDiscovery: true,
+        include: [],
+      },
       server: { middlewareMode: true },
       appType: 'custom',
     });
